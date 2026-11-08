@@ -1,0 +1,37 @@
+name: PC Virtual Gratis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - name: Criar usuario e habilitar Acesso Remoto
+        run: |
+          net user admin SenhaForte123! /add
+          net localgroup administrators admin /add
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+          Write-Host "Usuario: admin | Senha: SenhaForte123!"
+
+      - name: Instalar ngrok
+        run: choco install ngrok -y
+
+      - name: Abrir tunel e mostrar endereco
+        run: |
+          Start-Process ngrok -ArgumentList "tcp","3389","--authtoken","SEU_TOKEN_AQUI"
+          Start-Sleep 12
+          $t = Invoke-RestMethod http://127.0.0.1:4040/api/tunnels
+          $t.tunnels | ForEach-Object { Write-Host "ENDERECO RDP: $($_.public_url)" }
+
+      - name: Manter o PC ligado (6 horas)
+        run: |
+          $i = 0
+          while ($i -lt 340) {
+            Start-Sleep 60
+            $i++
+            Write-Host "PC ativo ha $i minutos"
+          }
+          
